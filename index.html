@@ -308,7 +308,7 @@
             <h1>에듀버짓 (EduBudget)</h1>
             <p>학교별 1인당 교육비 조회 시스템</p>
         </div>
-        <div id="statusMsg">🔄 data.csv 로드 중...</div>
+        <div id="statusMsg">🔄 data.csv 분석 및 검증 중...</div>
     </header>
 
     <div class="main-layout">
@@ -392,7 +392,6 @@
     const filterResultList = document.getElementById('filterResultList');
 
     window.addEventListener('DOMContentLoaded', function() {
-        // 완벽하게 영문 명칭 data.csv 매칭 및 한글 깨짐 방지용 인코딩 강제 고정
         Papa.parse("./data.csv", {
             download: true,
             header: true,
@@ -400,11 +399,10 @@
             dynamicTyping: true,
             encoding: "UTF-8",
             complete: function(results) {
-                // 학교명이 정상적으로 채워져 있는 데이터 세트만 엄격 분리
                 rawData = results.data.filter(row => row && row['학교명'] && String(row['학교명']).trim() !== '');
                 
                 if(!rawData || rawData.length === 0) {
-                    statusMsg.textContent = "❌ 에러: CSV 내부 구조 분석에 실패했습니다.";
+                    statusMsg.textContent = "❌ 에러: 데이터 파싱에 실패했습니다.";
                     return;
                 }
 
@@ -415,7 +413,7 @@
             },
             error: function(err) {
                 statusMsg.textContent = "❌ 파일 로드 실패 (data.csv 연결 에러)";
-                console.error("오류 디버깅 로그:", err);
+                console.error(err);
             }
         });
     });
@@ -526,10 +524,11 @@
         });
     }
 
-    // 숫자가 아니거나 비어있을 경우 방어 처리 함수
+    // [선생님 제안 반영] 값이 완전히 비어있거나 이상한 값은 0으로 완벽 정제하는 함수
     function cleanNum(val) {
-        if (val === undefined || val === null || isNaN(Number(val))) return 0;
-        return Number(val);
+        if (val === undefined || val === null) return 0;
+        const n = Number(String(val).replace(/[^0-9.-]/g, '')); // 혹시 모를 쉼표나 문자 제거
+        return isNaN(n) ? 0 : n;
     }
 
     function formatNumber(val) { 
@@ -556,10 +555,19 @@
         const officeGroup = rawData.filter(r => r['시도교육청']===ofc && r['교육지원청']===subOfc && r['학교급']===lvl && r['설립구분']===est && r['학교특성']===spec);
         const nationalGroup = rawData.filter(r => r['학교급']===lvl && r['설립구분']===est && r['학교특성']===spec);
 
-        // 데이터 공백 행 분모 0 에러 차단 방어 수식 교정
+        // [선생님 제안 핵심] 온전한 데이터(유효한 숫자가 있는 행)로만 카운트하여 정확한 평균 구하기
         function getAvg(group, key) {
-            const vRows = group.filter(r => r && r[key] !== undefined && r[key] !== null && r[key] !== '' && !isNaN(Number(r[key])));
-            return vRows.length === 0 ? 0 : (vRows.reduce((acc, cur) => acc + Number(cur[key]), 0) / vRows.length);
+            const validRows = group.filter(r => {
+                if(!r) return false;
+                const val = r[key];
+                if(val === undefined || val === null || String(val).trim() === '') return false;
+                const n = Number(String(val).replace(/[^0-9.-]/g, ''));
+                return !isNaN(n) && n > 0; // 0이거나 숫자가 아니면 제외
+            });
+            
+            if (validRows.length === 0) return 0;
+            const sum = validRows.reduce((acc, cur) => acc + Number(String(cur[key]).replace(/[^0-9.-]/g, '')), 0);
+            return sum / validRows.length;
         }
 
         const years = ['24', '23', '22'];
