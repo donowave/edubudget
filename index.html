@@ -175,9 +175,9 @@
         let filteredData = [];
         let myChart = null;
 
-        // 안전한 숫자 정제 및 변환 함수 (쉼표, 문자 차단 및 결측치 방어)
+        // 안전한 숫자 정제 및 변환 함수 (문자열, 결측치 완벽 제어)
         function cleanNum(value) {
-            if (!value) return 0;
+            if (value === undefined || value === null) return 0;
             const clean = String(value).replace(/[^0-9.-]/g, '');
             const num = parseFloat(clean);
             return isNaN(num) ? 0 : num;
@@ -201,15 +201,22 @@
 
         // 웹페이지 로드 시 CSV 자동 로드 수행
         document.addEventListener("DOMContentLoaded", () => {
-            Papa.parse("data.csv", {
+            // 주소 뒤에 랜덤 쿼리 스트링(?v=...)을 붙여 브라우저의 강제 캐싱을 방해하고 무조건 새 데이터를 요청합니다.
+            Papa.parse("data.csv?v=" + Math.random(), {
                 download: true,
                 header: true,
-                skipEmptyLines: true,
+                skipEmptyLines: 'greedy', // 공백이거나 불완전한 빈 줄은 연산에서 완전히 제외
                 encoding: "UTF-8",
                 complete: function(results) {
-                    rawData = results.data;
+                    // 데이터 검증: 필수 열인 '학교명'이 올바르게 존재하는 행만 추출
+                    rawData = results.data.filter(row => row['학교명'] && row['학교명'].trim() !== "");
                     filteredData = [...rawData];
                     
+                    if(rawData.length === 0) {
+                        showErrorBadge("데이터 내용 없음", "CSV 파일 파싱은 성공했으나, 안에 읽을 수 있는 학교 데이터가 없습니다.");
+                        return;
+                    }
+
                     // 성공 상태 변경 및 검색 폼 활성화
                     const badge = document.getElementById("statusBadge");
                     badge.className = "px-4 py-1.5 rounded-full text-sm font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-2";
@@ -222,16 +229,23 @@
                     updateSchoolList(filteredData);
                 },
                 error: function(err) {
-                    const badge = document.getElementById("statusBadge");
-                    badge.className = "px-4 py-1.5 rounded-full text-sm font-semibold bg-rose-50 text-rose-700 border border-rose-200 flex items-center gap-2";
-                    badge.innerHTML = `❌ 데이터 로드 실패`;
+                    showErrorBadge("네트워크/파일 로드 에러", "상대경로의 data.csv를 불러오지 못했습니다.");
                     console.error("CSV Parse Error:", err);
+                    
+                    alert("⚠️ [데이터 로드 실패 안내]\n\n배포 직후에는 깃허브 서버 반영에 1~2분 정도 소요될 수 있습니다.\n\n새로고침(Ctrl + F5)을 시도해 보시고, 지속될 경우 저장소 최상위에 'data.csv' 파일 이름이 소문자로 정확히 들어가 있는지 확인해 주세요.");
                 }
             });
 
             // 직접 검색 실시간 리스너 설정
             setupSearch();
         });
+
+        function showErrorBadge(title, desc) {
+            const badge = document.getElementById("statusBadge");
+            badge.className = "px-4 py-1.5 rounded-full text-sm font-semibold bg-rose-50 text-rose-700 border border-rose-200 flex items-center gap-2";
+            badge.innerHTML = `❌ ${title}`;
+            console.warn(desc);
+        }
 
         // 5단계 필터 요소 및 관계 정의
         const filterIds = ["filterSido", "filterSupport", "filterLevel", "filterType", "filterFeature"];
@@ -240,8 +254,10 @@
         function initFilters() {
             filterIds.forEach((id) => {
                 const el = document.getElementById(id);
-                el.disabled = false;
-                el.addEventListener("change", () => handleFilterChange(id));
+                if(el) {
+                    el.disabled = false;
+                    el.addEventListener("change", () => handleFilterChange(id));
+                }
             });
             rebuildFilters(0);
         }
@@ -250,20 +266,19 @@
         function rebuildFilters(startIndex) {
             let currentSet = [...rawData];
             
-            // 현재 인덱스 이전까지의 필터 선택 조건 반영
             for (let i = 0; i < startIndex; i++) {
-                const val = document.getElementById(filterIds[i]).value;
+                const el = document.getElementById(filterIds[i]);
+                const val = el ? el.value : "";
                 if (val) {
                     currentSet = currentSet.filter(row => row[filterKeys[i]] === val);
                 }
             }
 
-            // 변경 대상 단계부터 하위 드롭다운들의 옵션을 동적으로 재채우기
             for (let i = startIndex; i < filterIds.length; i++) {
                 const el = document.getElementById(filterIds[i]);
-                const prevVal = el.value; // 기존에 고른 값 유지 시도용
+                if(!el) continue;
+                const prevVal = el.value;
 
-                // 현재까지 필터링된 데이터 기반 고유값 추출
                 const uniqueValues = [...new Set(currentSet.map(row => row[filterKeys[i]] ? row[filterKeys[i]].trim() : ""))].filter(Boolean).sort();
                 
                 el.innerHTML = '<option value="">전체</option>';
@@ -275,215 +290,6 @@
                     el.appendChild(opt);
                 });
 
-                // 다음 단계 필터를 구성하기 위해 현재 선택값 반영
                 const currentVal = el.value;
                 if (currentVal) {
-                    currentSet = currentSet.filter(row => row[filterKeys[i]] === currentVal);
-                }
-            }
-            
-            filteredData = currentSet;
-            updateSchoolList(filteredData);
-        }
-
-        function handleFilterChange(changedId) {
-            const index = filterIds.indexOf(changedId);
-            // 직접 검색창 비우기 (상호 동시 연동 시 혼선 방지)
-            document.getElementById("searchInput").value = "";
-            rebuildFilters(index + 1);
-        }
-
-        // 좌측 하단 필터 최종 리스트 업데이트
-        function updateSchoolList(data) {
-            const listEl = document.getElementById("schoolList");
-            const countEl = document.getElementById("filteredCount");
-            countEl.textContent = data.length.toLocaleString();
-
-            if (data.length === 0) {
-                listEl.innerHTML = '<div class="p-4 text-center text-slate-400">조건에 부합하는 학교가 없습니다.</div>';
-                return;
-            }
-
-            listEl.innerHTML = "";
-            data.forEach(school => {
-                const item = document.createElement("div");
-                item.className = "p-3 hover:bg-slate-50 cursor-pointer transition-colors flex flex-col gap-0.5";
-                item.innerHTML = `
-                    <div class="font-bold text-slate-800">${school['학교명']}</div>
-                    <div class="text-xs text-slate-400">${school['시도교육청']} | ${school['교육지원청']} | ${school['학교급']}</div>
-                `;
-                item.addEventListener("click", () => selectSchool(school));
-                listEl.appendChild(item);
-            });
-        }
-
-        // 직접 검색창 자동완성 로직
-        function setupSearch() {
-            const input = document.getElementById("searchInput");
-            const suggestBox = document.getElementById("autocompleteList");
-
-            input.addEventListener("input", () => {
-                const text = input.value.trim().toLowerCase();
-                if (!text) {
-                    suggestBox.classList.add("hidden");
-                    return;
-                }
-
-                // 전체 데이터 풀에서 이름 매칭 (최대 10개로 차단)
-                const matches = rawData.filter(row => row['학교명'] && row['학교명'].toLowerCase().includes(text)).slice(0, 10);
-
-                if (matches.length === 0) {
-                    suggestBox.innerHTML = '<div class="p-3 text-xs text-slate-400">검색 결과가 없습니다.</div>';
-                } else {
-                    suggestBox.innerHTML = "";
-                    matches.forEach(school => {
-                        const div = document.createElement("div");
-                        div.className = "p-2.5 hover:bg-slate-50 text-sm cursor-pointer border-b border-slate-50 last:border-0";
-                        div.innerHTML = `<span class="font-semibold text-slate-800">${school['학교명']}</span> <span class="text-xs text-slate-400">(${school['시도교육청']})</span>`;
-                        div.addEventListener("click", () => {
-                            // 자동완성 클릭 시 필터 드롭다운 전체 리셋 후 선택 처리
-                            filterIds.forEach(id => document.getElementById(id).value = "");
-                            selectSchool(school);
-                            suggestBox.classList.add("hidden");
-                            input.value = school['학교명'];
-                        });
-                        suggestBox.appendChild(div);
-                    });
-                }
-                suggestBox.classList.remove("hidden");
-            });
-
-            // 포커스 아웃 시 딜레이를 주어 클릭 이벤트가 정상 작동하도록 처리
-            document.addEventListener("click", (e) => {
-                if (!input.contains(e.target) && !suggestBox.contains(e.target)) {
-                    suggestBox.classList.add("hidden");
-                }
-            });
-        }
-
-        // 실시간 그룹별 수학적 평균 계산 함수 (결측치 및 0값 제외 산출)
-        function calculateAverage(dataset, year) {
-            let totalSum = 0;
-            let count = 0;
-            const key = `${year}년 1인당 교육비`;
-
-            dataset.forEach(row => {
-                const val = cleanNum(row[key]);
-                if (val > 0) {
-                    totalSum += val;
-                    count++;
-                }
-            });
-            return count === 0 ? 0 : Math.round(totalSum / count);
-        }
-
-        // 특정 학교 선택 시 대시보드 데이터 갱신 및 차트 드로잉
-        function selectSchool(school) {
-            document.getElementById("dashboardWelcome").classList.add("hidden");
-            document.getElementById("dashboardContent").classList.remove("hidden");
-
-            // 기본 정보 세팅
-            document.getElementById("viewSchoolName").textContent = school['학교명'] || '-';
-            document.getElementById("viewSchoolLevel").textContent = school['학교급'] || '미분류';
-            document.getElementById("viewSido").textContent = school['시도교육청'] || '-';
-            document.getElementById("viewSupport").textContent = school['교육지원청'] || '-';
-            document.getElementById("viewTypeFeature").textContent = `${school['설립구분'] || '-'} / ${school['학교특성'] || '일반'}`;
-            document.getElementById("viewAnniversary").textContent = formatDate(school['개교기념일']);
-            document.getElementById("viewPhone").textContent = school['전화번호'] || '-';
-            document.getElementById("viewAddress").textContent = school['학교도로명 주소'] || '-';
-            
-            const hp = school['홈페이지 주소'];
-            const hpEl = document.getElementById("viewHomepage");
-            if(hp) {
-                hpEl.href = hp.startsWith('http') ? hp : 'http://' + hp;
-                hpEl.classList.remove("hidden");
-            } else {
-                hpEl.classList.add("hidden");
-            }
-
-            // 세부 정보 테이블 출력 데이터 파싱 및 안전 매핑
-            document.getElementById("t-24-count").textContent = cleanNum(school['24년 학생수']) ? cleanNum(school['24년 학생수']).toLocaleString() + ' 명' : '-';
-            document.getElementById("t-24-basic").textContent = formatWon(school['24년 1인당 기본적 교육활동비']);
-            document.getElementById("t-24-select").textContent = formatWon(school['24년 1인당 선택적 교육활동비']);
-            document.getElementById("t-24-total").textContent = formatWon(school['24년 1인당 교육비']);
-
-            document.getElementById("t-23-count").textContent = cleanNum(school['23년 학생수']) ? cleanNum(school['23년 학생수']).toLocaleString() + ' 명' : '-';
-            document.getElementById("t-23-basic").textContent = formatWon(school['23년 1인당 기본적 교육활동비']);
-            document.getElementById("t-23-select").textContent = formatWon(school['23년 1인당 선택적 교육활동비']);
-            document.getElementById("t-23-total").textContent = formatWon(school['23년 1인당 교육비']);
-
-            document.getElementById("t-22-count").textContent = cleanNum(school['22년 학생수']) ? cleanNum(school['22년 학생수']).toLocaleString() + ' 명' : '-';
-            document.getElementById("t-22-basic").textContent = formatWon(school['22년 1인당 기본적 교육활동비']);
-            document.getElementById("t-22-select").textContent = formatWon(school['22년 1인당 선택적 교육활동비']);
-            document.getElementById("t-22-total").textContent = formatWon(school['22년 1인당 교육비']);
-
-            // --- 실시간 비교 평균 데이터 연산 실행 ---
-            const targetSupport = school['교육지원청'];
-            const supportGroup = rawData.filter(row => row['교육지원청'] === targetSupport);
-
-            // 선택학교 3개년 추이 배열
-            const schoolData = [
-                cleanNum(school['22년 1인당 교육비']),
-                cleanNum(school['23년 1인당 교육비']),
-                cleanNum(school['24년 1인당 교육비'])
-            ];
-
-            // 교육지원청 3개년 평균 배열
-            const supportAvgData = [
-                calculateAverage(supportGroup, 22),
-                calculateAverage(supportGroup, 23),
-                calculateAverage(supportGroup, 24)
-            ];
-
-            // 전국 3개년 평균 배열
-            const nationalAvgData = [
-                calculateAverage(rawData, 22),
-                calculateAverage(rawData, 23),
-                calculateAverage(rawData, 24)
-            ];
-
-            // Chart.js 시각화 업데이트
-            renderChart(school['학교명'], schoolData, supportAvgData, nationalAvgData);
-        }
-
-        // Chart.js 드로잉 및 객체 자원 순환 관리 함수
-        function renderChart(schoolName, schoolData, supportAvg, nationalAvg) {
-            const ctx = document.getElementById('trendChart').getContext('2d');
-            
-            // 기존 차트가 메모리에 존재할 경우 완벽히 파괴(Destroy) 후 리드로잉
-            if (myChart) {
-                myChart.destroy();
-            }
-
-            myChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: ['2022년', '2023년', '2024년'],
-                    datasets: [
-                        {
-                            label: schoolName,
-                            data: schoolData,
-                            borderColor: '#1d4ed8', // Blue 700
-                            backgroundColor: '#1d4ed8',
-                            borderWidth: 3,
-                            tension: 0.15,
-                            pointRadius: 4
-                        },
-                        {
-                            label: '교육지원청 평균',
-                            data: supportAvg,
-                            borderColor: '#10b981', // Emerald 500
-                            backgroundColor: '#10b981',
-                            borderWidth: 2,
-                            borderDash: [5, 5],
-                            tension: 0.15,
-                            pointRadius: 3
-                        },
-                        {
-                            label: '전국 평균',
-                            data: nationalAvg,
-                            borderColor: '#94a3b8', // Slate 400
-                            backgroundColor: '#94a3b8',
-                            borderWidth: 2,
-                            borderDash: [3, 3],
-                            tension: 0.
+                    currentSet = currentSet.filter
