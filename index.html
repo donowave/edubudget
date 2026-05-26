@@ -18,12 +18,7 @@
             --border-color: #e2e8f0;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif; }
 
         body {
             background-color: var(--background-color);
@@ -47,16 +42,8 @@
             box-shadow: 0 4px 12px rgba(30, 58, 138, 0.1);
         }
 
-        header h1 {
-            font-size: 1.5rem;
-            font-weight: 800;
-            letter-spacing: -0.5px;
-        }
-
-        header p {
-            font-size: 0.9rem;
-            opacity: 0.9;
-        }
+        header h1 { font-size: 1.5rem; font-weight: 800; }
+        header p { font-size: 0.9rem; opacity: 0.9; }
 
         #statusMsg {
             font-size: 0.85rem;
@@ -65,240 +52,57 @@
             border-radius: 20px;
         }
 
-        .main-layout {
-            display: flex;
-            gap: 15px;
-            flex: 1;
-            height: calc(100vh - 85px);
-        }
-
-        .card {
-            background: var(--card-background);
-            border-radius: 12px;
-            padding: 16px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-            border: 1px solid var(--border-color);
-        }
-
-        .sidebar {
-            width: 320px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .search-title {
-            font-size: 0.95rem;
-            font-weight: 700;
-            color: var(--primary-color);
-            margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .search-box {
-            position: relative;
-        }
-
+        .main-layout { display: flex; gap: 15px; flex: 1; height: calc(100vh - 85px); }
+        .card { background: var(--card-background); border-radius: 12px; padding: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); border: 1px solid var(--border-color); }
+        .sidebar { width: 320px; display: flex; flex-direction: column; gap: 12px; }
+        .search-title { font-size: 0.95rem; font-weight: 700; color: var(--primary-color); margin-bottom: 8px; display: flex; align-items: center; gap: 5px; }
+        
+        .search-box { position: relative; }
         .search-box input {
-            width: 100%;
-            padding: 10px 14px;
-            font-size: 0.9rem;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            outline: none;
-            transition: all 0.2s;
-        }
-
-        .search-box input:focus {
-            border-color: var(--primary-light);
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+            width: 100%; padding: 10px 14px; font-size: 0.9rem;
+            border: 1px solid var(--border-color); border-radius: 8px; outline: none;
         }
 
         .autocomplete-list {
-            position: absolute;
-            top: 100%; left: 0; right: 0;
-            background: white;
-            border: 1px solid var(--border-color);
-            border-top: none;
+            position: absolute; top: 100%; left: 0; right: 0;
+            background: white; border: 1px solid var(--border-color); border-top: none;
             border-bottom-left-radius: 8px; border-bottom-right-radius: 8px;
-            max-height: 180px;
-            overflow-y: auto;
-            z-index: 1000;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            max-height: 180px; overflow-y: auto; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.08);
         }
 
-        .autocomplete-item {
-            padding: 10px 14px;
-            cursor: pointer;
-            font-size: 0.85rem;
-            border-bottom: 1px solid #f1f5f9;
-        }
-
+        .autocomplete-item { padding: 10px 14px; cursor: pointer; font-size: 0.85rem; border-bottom: 1px solid #f1f5f9; }
         .autocomplete-item:hover { background-color: #f0fdf4; }
 
-        .filter-group {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            flex: 1;
-            overflow: hidden;
-        }
+        .filter-group { display: flex; flex-direction: column; gap: 8px; flex: 1; overflow: hidden; }
+        .filter-group select { width: 100%; padding: 8px 12px; font-size: 0.85rem; border: 1px solid var(--border-color); border-radius: 6px; background-color: #f8fafc; outline: none; }
+        .filter-group select:disabled { background-color: #e2e8f0; opacity: 0.6; cursor: not-allowed; }
 
-        .filter-group select {
-            width: 100%;
-            padding: 8px 12px;
-            font-size: 0.85rem;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            background-color: #f8fafc;
-            outline: none;
-        }
+        .filter-result-list { flex: 1; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 6px; margin-top: 5px; background: #f8fafc; }
+        .filter-result-item { padding: 8px 12px; font-size: 0.85rem; cursor: pointer; border-bottom: 1px solid #edf2f7; }
+        .filter-result-item:hover { background-color: #e0f2fe; color: var(--primary-color); font-weight: 600; }
 
-        .filter-group select:disabled {
-            background-color: #e2e8f0;
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
+        .dashboard { display: none; grid-template-rows: auto 1fr 1.1fr; gap: 12px; flex: 1; height: 100%; }
+        .dashboard-placeholder { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; color: var(--text-muted); background: white; border-radius: 12px; border: 1px dashed var(--border-color); }
+        .section-title { font-size: 1rem; font-weight: 700; color: var(--primary-color); margin-bottom: 8px; border-left: 4px solid var(--primary-light); padding-left: 8px; }
 
-        .filter-result-list {
-            flex: 1;
-            overflow-y: auto;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            margin-top: 5px;
-            background: #f8fafc;
-        }
+        .info-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+        .info-item { background: #f8fafc; padding: 8px 12px; border-radius: 6px; border: 1px solid #f1f5f9; }
+        .info-item label { display: block; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 2px; }
+        .info-item span { font-size: 0.85rem; font-weight: 600; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+        .info-item a { font-size: 0.85rem; color: var(--primary-light); text-decoration: none; font-weight: 600; }
 
-        .filter-result-item {
-            padding: 8px 12px;
-            font-size: 0.85rem;
-            cursor: pointer;
-            border-bottom: 1px solid #edf2f7;
-            transition: background 0.2s;
-        }
-
-        .filter-result-item:hover {
-            background-color: #e0f2fe;
-            color: var(--primary-color);
-            font-weight: 600;
-        }
-
-        .dashboard {
-            flex: 1;
-            display: none;
-            grid-template-rows: auto 1fr 1.1fr;
-            gap: 12px;
-            height: 100%;
-        }
-
-        .dashboard-placeholder {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            color: var(--text-muted);
-            background: white;
-            border-radius: 12px;
-            border: 1px dashed var(--border-color);
-        }
-
-        .section-title {
-            font-size: 1rem;
-            font-weight: 700;
-            color: var(--primary-color);
-            margin-bottom: 8px;
-            border-left: 4px solid var(--primary-light);
-            padding-left: 8px;
-        }
-
-        .info-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 8px;
-        }
-
-        .info-item {
-            background: #f8fafc;
-            padding: 8px 12px;
-            border-radius: 6px;
-            border: 1px solid #f1f5f9;
-        }
-
-        .info-item label {
-            display: block;
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            margin-bottom: 2px;
-        }
-
-        .info-item span {
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: var(--text-main);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            display: block;
-        }
-
-        .info-item a {
-            font-size: 0.85rem;
-            color: var(--primary-light);
-            text-decoration: none;
-            font-weight: 600;
-        }
-
-        .table-card {
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-        
-        .table-wrap {
-            flex: 1;
-            overflow-y: auto;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.85rem;
-            text-align: right;
-        }
-
-        th, td {
-            padding: 6px 12px;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        th {
-            background-color: #e2e8f0;
-            color: var(--primary-color);
-            font-weight: 700;
-            text-align: center;
-            position: sticky; top: 0;
-        }
-
+        .table-card { display: flex; flex-direction: column; overflow: hidden; }
+        .table-wrap { flex: 1; overflow-y: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: right; }
+        th, td { padding: 6px 12px; border-bottom: 1px solid var(--border-color); }
+        th { background-color: #e2e8f0; color: var(--primary-color); font-weight: 700; text-align: center; position: sticky; top: 0; }
         th:first-child, td:first-child { text-align: center; font-weight: 600; }
         td:nth-child(2) { text-align: center; }
 
         .bg-office { background-color: #f0fdf4; }
         .bg-national { background-color: #fff7ed; }
-
-        .chart-card {
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        .chart-container {
-            flex: 1;
-            position: relative;
-            min-height: 0;
-        }
+        .chart-card { display: flex; flex-direction: column; overflow: hidden; }
+        .chart-container { flex: 1; position: relative; min-height: 0; }
     </style>
 </head>
 <body>
@@ -308,7 +112,7 @@
             <h1>에듀버짓 (EduBudget)</h1>
             <p>학교별 1인당 교육비 조회 시스템</p>
         </div>
-        <div id="statusMsg">🔄 원격 데이터 원본 동기화 중...</div>
+        <div id="statusMsg">🔄 data.csv 로드 중...</div>
     </header>
 
     <div class="main-layout">
@@ -316,7 +120,7 @@
             <div class="card">
                 <div class="search-title">🔍 학교명 직접 검색</div>
                 <div class="search-box">
-                    <input type="text" id="schoolSearch" placeholder="데이터 로드 후 입력 가능합니다..." disabled autocomplete="off">
+                    <input type="text" id="schoolSearch" placeholder="데이터 로드 후 가능합니다." disabled autocomplete="off">
                     <div class="autocomplete-list" id="autocompleteList"></div>
                 </div>
             </div>
@@ -329,7 +133,6 @@
                     <select id="filterLevel" disabled><option value="">3. 학교급 선택</option></select>
                     <select id="filterEst" disabled><option value="">4. 설립구분 선택</option></select>
                     <select id="filterSpec" disabled><option value="">5. 학교특성 선택</option></select>
-                    
                     <div style="font-size:0.8rem; font-weight:700; color:var(--text-muted); margin-top:5px;">검색 결과 학교 목록</div>
                     <div class="filter-result-list" id="filterResultList"></div>
                 </div>
@@ -338,7 +141,7 @@
 
         <div class="dashboard-placeholder" id="placeholder">
             <h2 style="font-size:1.2rem; margin-bottom:5px;">🏫 조회할 학교를 선택해 주세요</h2>
-            <p style="font-size:0.9rem;">좌측의 학교명 검색창 또는 조건 선택 필터를 통해 조회가 가능합니다.</p>
+            <p style="font-size:0.9rem;">좌측 검색창 또는 필터를 이용해 주세요.</p>
         </div>
 
         <div class="dashboard" id="dashboard">
@@ -392,10 +195,8 @@
     const filterResultList = document.getElementById('filterResultList');
 
     window.addEventListener('DOMContentLoaded', function() {
-        // [핵심 변경] 경로 오류 완벽 해결: GitHub 원본 데이터(Raw) 절대 경로를 직접 호출하여 경로가 꼬이는 문제를 원천 해결합니다.
-        const csvUrl = "https://raw.githubusercontent.com/donowave/edubudget/main/data.csv";
-
-        Papa.parse(csvUrl, {
+        // 경로 안정성 확보: 대소문자 매칭 및 깃허브 페이지 호환 상대 경로 지정
+        Papa.parse("data.csv", {
             download: true,
             header: true,
             skipEmptyLines: true,
@@ -403,44 +204,20 @@
             encoding: "UTF-8",
             complete: function(results) {
                 rawData = results.data.filter(row => row && row['학교명'] && String(row['학교명']).trim() !== '');
-                
                 if(!rawData || rawData.length === 0) {
-                    statusMsg.textContent = "❌ 에러: 데이터 파싱 오류 발생";
+                    statusMsg.textContent = "❌ 데이터 포맷 이상";
                     return;
                 }
-
                 statusMsg.textContent = `📊 로드 완료 (${rawData.length.toLocaleString()}개교)`;
                 schoolSearch.disabled = false;
                 schoolSearch.placeholder = "학교 이름을 입력하세요...";
                 initFilterOptions();
             },
             error: function(err) {
-                // 원격 주소 호출 실패 시, 마지막 보루로 로컬 경로 자동 백업 호출
-                console.log("원격 호출 실패, 로컬 백업 경로 시도...");
-                tryLocalBackup();
+                statusMsg.textContent = "❌ 파일 주소 연동 실패";
             }
         });
     });
-
-    function tryLocalBackup() {
-        Papa.parse("./data.csv", {
-            download: true,
-            header: true,
-            skipEmptyLines: true,
-            dynamicTyping: true,
-            encoding: "UTF-8",
-            complete: function(results) {
-                rawData = results.data.filter(row => row && row['학교명'] && String(row['학교명']).trim() !== '');
-                statusMsg.textContent = `📊 로드 완료 (${rawData.length.toLocaleString()}개교)`;
-                schoolSearch.disabled = false;
-                schoolSearch.placeholder = "학교 이름을 입력하세요...";
-                initFilterOptions();
-            },
-            error: function(e) {
-                statusMsg.textContent = "❌ 데이터 파일을 찾을 수 없습니다 (data.csv 확인 필요)";
-            }
-        });
-    }
 
     schoolSearch.addEventListener('input', function() {
         const keyword = this.value.trim().toLowerCase();
@@ -495,13 +272,11 @@
             resetSelects([fSpec]);
             if(!fEst.value) return updateFilteredList(getFilteredRows());
             fSpec.disabled = false;
-            populateSelect(fSpec, getUniqueValues(getFilteredRows(), '학교특성'), "5. 학교특성 선택 (필수아님)");
+            populateSelect(fSpec, getUniqueValues(getFilteredRows(), '학교특성'), "5. 학교특성 선택");
             updateFilteredList(getFilteredRows());
         });
 
-        fSpec.addEventListener('change', () => {
-            updateFilteredList(getFilteredRows());
-        });
+        fSpec.addEventListener('change', () => { updateFilteredList(getFilteredRows()); });
     }
 
     function getUniqueValues(dataRows, key) {
@@ -511,9 +286,7 @@
 
     function populateSelect(selectElement, arrayValues, defaultText) {
         selectElement.innerHTML = `<option value="">${defaultText}</option>`;
-        arrayValues.forEach(v => {
-            selectElement.innerHTML += `<option value="${v}">${v}</option>`;
-        });
+        arrayValues.forEach(v => { selectElement.innerHTML += `<option value="${v}">${v}</option>`; });
     }
 
     function resetSelects(selectsArray) {
@@ -538,7 +311,6 @@
     function updateFilteredList(rows) {
         filterResultList.innerHTML = '';
         if(rows.length === 0) return;
-        
         rows.forEach(school => {
             const div = document.createElement('div');
             div.className = 'filter-result-item';
@@ -586,7 +358,6 @@
                 const n = Number(String(val).replace(/[^0-9.-]/g, ''));
                 return !isNaN(n) && n > 0;
             });
-            
             if (validRows.length === 0) return 0;
             const sum = validRows.reduce((acc, cur) => acc + Number(String(cur[key]).replace(/[^0-9.-]/g, '')), 0);
             return sum / validRows.length;
@@ -607,8 +378,8 @@
         const hpTag = hp ? `<a href="${hp.startsWith('http') ? hp : 'http://'+hp}" target="_blank">링크</a>` : '<span>-</span>';
         
         document.getElementById('schoolInfoGrid').innerHTML = `
-            <div class="info-item"><label>시도교육청</label><span title="${selectedSchool['시도교육청']}">${selectedSchool['시도교육청']||'-'}</span></div>
-            <div class="info-item"><label>교육지원청</label><span title="${selectedSchool['교육지원청']}">${selectedSchool['교육지원청']||'-'}</span></div>
+            <div class="info-item"><label>시도교육청</label><span>${selectedSchool['시도교육청']||'-'}</span></div>
+            <div class="info-item"><label>교육지원청</label><span>${selectedSchool['교육지원청']||'-'}</span></div>
             <div class="info-item"><label>학교급</label><span>${selectedSchool['학교급']||'-'}</span></div>
             <div class="info-item"><label>설립구분</label><span>${selectedSchool['설립구분']||'-'}</span></div>
             <div class="info-item"><label>학교특성</label><span>${selectedSchool['학교특성']||'일반'}</span></div>
@@ -651,37 +422,15 @@
             data: {
                 labels: ['2022년', '2023년', '2024년'],
                 datasets: [
-                    {
-                        label: `${selectedSchool['학교명']} (총액)`,
-                        data: [stats['22'].target.total, stats['23'].target.total, stats['24'].target.total],
-                        borderColor: '#1e3a8a', backgroundColor: '#1e3a8a',
-                        borderWidth: 3, pointRadius: 4, fill: false, tension: 0.1
-                    },
-                    {
-                        label: '동일 조건 교육지원청 평균',
-                        data: [stats['22'].office.total, stats['23'].office.total, stats['24'].office.total],
-                        borderColor: '#3b82f6', backgroundColor: '#3b82f6',
-                        borderWidth: 2, borderDash: [4, 4], pointRadius: 3, fill: false, tension: 0.1
-                    },
-                    {
-                        label: '동일 조건 전국 평균',
-                        data: [stats['22'].national.total, stats['23'].national.total, stats['24'].national.total],
-                        borderColor: '#06b6d4', backgroundColor: '#06b6d4',
-                        borderWidth: 2, borderDash: [2, 2], pointRadius: 3, fill: false, tension: 0.1
-                    }
+                    { label: `${selectedSchool['학교명']} (총액)`, data: [stats['22'].target.total, stats['23'].target.total, stats['24'].target.total], borderColor: '#1e3a8a', backgroundColor: '#1e3a8a', borderWidth: 3, pointRadius: 4, fill: false, tension: 0.1 },
+                    { label: '교육지원청 평균', data: [stats['22'].office.total, stats['23'].office.total, stats['24'].office.total], borderColor: '#3b82f6', backgroundColor: '#3b82f6', borderWidth: 2, borderDash: [4, 4], pointRadius: 3, fill: false, tension: 0.1 },
+                    { label: '전국 평균', data: [stats['22'].national.total, stats['23'].national.total, stats['24'].national.total], borderColor: '#06b6d4', backgroundColor: '#06b6d4', borderWidth: 2, borderDash: [2, 2], pointRadius: 3, fill: false, tension: 0.1 }
                 ]
             },
             options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
-                    tooltip: { callbacks: { label: d => `${d.dataset.label}: ${d.parsed.y.toLocaleString()}원` } }
-                },
-                scales: {
-                    y: { ticks: { callback: v => v.toLocaleString(), font: { size: 10 } } },
-                    x: { ticks: { font: { size: 11 } } }
-                }
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } }, tooltip: { callbacks: { label: d => `${d.dataset.label}: ${d.parsed.y.toLocaleString()}원` } } },
+                scales: { y: { ticks: { callback: v => v.toLocaleString(), font: { size: 10 } } }, x: { ticks: { font: { size: 11 } } } }
             }
         });
     }
