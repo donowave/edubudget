@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>에듀버짓 (EduBudget)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-color: #1e3a8a;
+            --primary-light: #3b82f6;
+            --accent-color: #06b6d4;
+            --background-color: #f0f4f8;
+            --card-background: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+        }
+
+        body {
+            background-color: var(--background-color);
+            color: var(--text-main);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            padding: 15px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+            padding: 12px 24px;
+            border-radius: 12px;
+            color: white;
+            margin-bottom: 12px;
+            box-shadow: 0 4px 12px rgba(30, 58, 138, 0.1);
+        }
+
+        header h1 {
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        header p {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        #statusMsg {
+            font-size: 0.85rem;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 6px 14px;
+            border-radius: 20px;
+        }
+
+        .main-layout {
+            display: flex;
+            gap: 15px;
+            flex: 1;
+            height: calc(100vh - 85px);
+        }
+
+        .card {
+            background: var(--card-background);
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border-color);
+        }
+
+        .sidebar {
+            width: 320px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .search-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .search-box {
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 10px 14px;
+            font-size: 0.9rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .search-box input:focus {
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        }
+
+        .autocomplete-list {
+            position: absolute;
+            top: 100%; left: 0; right: 0;
+            background: white;
+            border: 1px solid var(--border-color);
+            border-top: none;
+            border-bottom-left-radius: 8px; border-bottom-right-radius: 8px;
+            max-height: 180px;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+
+        .autocomplete-item {
+            padding: 10px 14px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .autocomplete-item:hover { background-color: #f0fdf4; }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .filter-group select {
+            width: 100%;
+            padding: 8px 12px;
+            font-size: 0.85rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background-color: #f8fafc;
+            outline: none;
+        }
+
+        .filter-group select:disabled {
+            background-color: #e2e8f0;
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .filter-result-list {
+            flex: 1;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            margin-top: 5px;
+            background: #f8fafc;
+        }
+
+        .filter-result-item {
+            padding: 8px 12px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            border-bottom: 1px solid #edf2f7;
+            transition: background 0.2s;
+        }
+
+        .filter-result-item:hover {
+            background-color: #e0f2fe;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .dashboard {
+            flex: 1;
+            display: none;
+            grid-template-rows: auto 1fr 1.1fr;
+            gap: 12px;
+            height: 100%;
+        }
+
+        .dashboard-placeholder {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: var(--text-muted);
+            background: white;
+            border-radius: 12px;
+            border: 1px dashed var(--border-color);
+        }
+
+        .section-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 8px;
+            border-left: 4px solid var(--primary-light);
+            padding-left: 8px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+
+        .info-item {
+            background: #f8fafc;
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid #f1f5f9;
+        }
+
+        .info-item label {
+            display: block;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 2px;
+        }
+
+        .info-item span {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-main);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: block;
+        }
+
+        .info-item a {
+            font-size: 0.85rem;
+            color: var(--primary-light);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .table-card {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .table-wrap {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            text-align: right;
+        }
+
+        th, td {
+            padding: 6px 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background-color: #e2e8f0;
+            color: var(--primary-color);
+            font-weight: 700;
+            text-align: center;
+            position: sticky; top: 0;
+        }
+
+        th:first-child, td:first-child { text-align: center; font-weight: 600; }
+        td:nth-child(2) { text-align: center; }
+
+        .bg-office { background-color: #f0fdf4; }
+        .bg-national { background-color: #fff7ed; }
+
+        .chart-card {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chart-container {
+            flex: 1;
+            position: relative;
+            min-height: 0;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div>
+            <h1>에듀버짓 (EduBudget)</h1>
+            <p>학교별 1인당 교육비 조회 시스템</p>
+        </div>
+        <div id="statusMsg">🔄 데이터 로드 중...</div>
+    </header>
+
+    <div class="main-layout">
+        <div class="sidebar">
+            <div class="card">
+                <div class="search-title">🔍 학교명 직접 검색</div>
+                <div class="search-box">
+                    <input type="text" id="schoolSearch" placeholder="데이터 로드 후 입력 가능합니다..." disabled autocomplete="off">
+                    <div class="autocomplete-list" id="autocompleteList"></div>
+                </div>
+            </div>
+
+            <div class="card" style="flex:1; display:flex; flex-direction:column; overflow:hidden;">
+                <div class="search-title">🗂️ 조건별 단계적 검색</div>
+                <div class="filter-group">
+                    <select id="filterSido" disabled><option value="">1. 시도교육청 선택</option></select>
+                    <select id="filterOffice" disabled><option value="">2. 교육지원청 선택</option></select>
+                    <select id="filterLevel" disabled><option value="">3. 학교급 선택</option></select>
+                    <select id="filterEst" disabled><option value="">4. 설립구분 선택</option></select>
+                    <select id="filterSpec" disabled><option value="">5. 학교특성 선택</option></select>
+                    
+                    <div style="font-size:0.8rem; font-weight:700; color:var(--text-muted); margin-top:5px;">검색 결과 학교 목록</div>
+                    <div class="filter-result-list" id="filterResultList"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-placeholder" id="placeholder">
+            <h2 style="font-size:1.2rem; margin-bottom:5px;">🏫 조회할 학교를 선택해 주세요</h2>
+            <p style="font-size:0.9rem;">좌측의 학교명 검색창 또는 조건 선택 필터를 통해 조회가 가능합니다.</p>
+        </div>
+
+        <div class="dashboard" id="dashboard">
+            <div class="card">
+                <div class="section-title">학교 기본 정보</div>
+                <div class="info-grid" id="schoolInfoGrid"></div>
+            </div>
+
+            <div class="card table-card">
+                <div class="section-title">연도별 1인당 교육비 및 평균 비교 (단위: 원)</div>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>연도</th>
+                                <th>구분</th>
+                                <th>1인당 기본적 교육활동비</th>
+                                <th>1인당 선택적 교육활동비</th>
+                                <th>1인당 교육비 (총액)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="financeTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card chart-card">
+                <div class="section-title">3개년 1인당 총 교육비 비교 추이</div>
+                <div class="chart-container">
+                    <canvas id="trendChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+    let rawData = [];
+    let chartInstance = null;
+
+    const statusMsg = document.getElementById('statusMsg');
+    const schoolSearch = document.getElementById('schoolSearch');
+    const autocompleteList = document.getElementById('autocompleteList');
+    const placeholder = document.getElementById('placeholder');
+    const dashboard = document.getElementById('dashboard');
+
+    const fSido = document.getElementById('filterSido');
+    const fOffice = document.getElementById('filterOffice');
+    const fLevel = document.getElementById('filterLevel');
+    const fEst = document.getElementById('filterEst');
+    const fSpec = document.getElementById('filterSpec');
+    const filterResultList = document.getElementById('filterResultList');
+
+    window.addEventListener('DOMContentLoaded', function() {
+        // 상대 경로 안전성 보완 및 파싱 오류 방어
+        Papa.parse("./data.csv", {
+            download: true,
+            header: true,
+            skipEmptyLines: true,
+            dynamicTyping: true,
+            complete: function(results) {
+                // 유효한 행만 필터링 (학교명이 비어있지 않은 유효 데이터만 축적)
+                rawData = results.data.filter(row => row['학교명'] && String(row['학교명']).trim() !== '');
+                
+                if(!rawData || rawData.length === 0) {
+                    statusMsg.textContent = "❌ 에러: CSV 내 유효 데이터가 없습니다.";
+                    return;
+                }
+
+                statusMsg.textContent = `📊 로드 완료 (${rawData.length.toLocaleString()}개교)`;
+                schoolSearch.disabled = false;
+                schoolSearch.placeholder = "학교 이름을 입력하세요...";
+                initFilterOptions();
+            },
+            error: function(err) {
+                statusMsg.textContent = "❌ CSV 로드 실패";
+                console.error(err);
+            }
+        });
+    });
+
+    schoolSearch.addEventListener('input', function() {
+        const keyword = this.value.trim().toLowerCase();
+        autocompleteList.innerHTML = '';
+        if (!keyword) return;
+
+        const matches = rawData.filter(row => row['학교명'] && String(row['학교명']).toLowerCase().includes(keyword)).slice(0, 10);
+        matches.forEach(school => {
+            const item = document.createElement('div');
+            item.className = 'autocomplete-item';
+            item.innerHTML = `<strong>${school['학교명']}</strong> <span style="color:var(--text-muted); font-size:0.75rem;">(${school['시도교육청']})</span>`;
+            item.addEventListener('click', () => {
+                schoolSearch.value = school['학교명'];
+                autocompleteList.innerHTML = '';
+                displaySchoolData(school);
+            });
+            autocompleteList.appendChild(item);
+        });
+    });
+
+    document.addEventListener('click', e => { if (e.target !== schoolSearch) autocompleteList.innerHTML = ''; });
+
+    function initFilterOptions() {
+        fSido.disabled = false;
+        populateSelect(fSido, getUniqueValues(rawData, '시도교육청'), "1. 시도교육청 선택");
+        
+        fSido.addEventListener('change', () => {
+            resetSelects([fOffice, fLevel, fEst, fSpec]);
+            if(!fSido.value) return updateFilteredList([]);
+            fOffice.disabled = false;
+            populateSelect(fOffice, getUniqueValues(getFilteredRows(), '교육지원청'), "2. 교육지원청 선택");
+            updateFilteredList(getFilteredRows());
+        });
+
+        fOffice.addEventListener('change', () => {
+            resetSelects([fLevel, fEst, fSpec]);
+            if(!fOffice.value) return updateFilteredList(getFilteredRows());
+            fLevel.disabled = false;
+            populateSelect(fLevel, getUniqueValues(getFilteredRows(), '학교급'), "3. 학교급 선택");
+            updateFilteredList(getFilteredRows());
+        });
+
+        fLevel.addEventListener('change', () => {
+            resetSelects([fEst, fSpec]);
+            if(!fLevel.value) return updateFilteredList(getFilteredRows());
+            fEst.disabled = false;
+            populateSelect(fEst, getUniqueValues(getFilteredRows(), '설립구분'), "4. 설립구분 선택");
+            updateFilteredList(getFilteredRows());
+        });
+
+        fEst.addEventListener('change', () => {
+            resetSelects([fSpec]);
+            if(!fEst.value) return updateFilteredList(getFilteredRows());
+            fSpec.disabled = false;
+            populateSelect(fSpec, getUniqueValues(getFilteredRows(), '학교특성'), "5. 학교특성 선택 (필수아님)");
+            updateFilteredList(getFilteredRows());
+        });
+
+        fSpec.addEventListener('change', () => {
+            updateFilteredList(getFilteredRows());
+        });
+    }
+
+    function getUniqueValues(dataRows, key) {
+        const values = dataRows.map(r => r[key]).filter(v => v !== undefined && v !== null && String(v).trim() !== '');
+        return [...new Set(values)].sort();
+    }
+
+    function populateSelect(selectElement, arrayValues, defaultText) {
+        selectElement.innerHTML = `<option value="">${defaultText}</option>`;
+        arrayValues.forEach(v => {
+            selectElement.innerHTML += `<option value="${v}">${v}</option>`;
+        });
+    }
+
+    function resetSelects(selectsArray) {
+        selectsArray.forEach(sel => {
+            sel.innerHTML = `<option value="">${sel.options[0].text}</option>`;
+            sel.disabled = true;
+        });
+        filterResultList.innerHTML = '';
+    }
+
+    function getFilteredRows() {
+        return rawData.filter(row => {
+            if(fSido.value && row['시도교육청'] !== fSido.value) return false;
+            if(fOffice.value && row['교육지원청'] !== fOffice.value) return false;
+            if(fLevel.value && row['학교급'] !== fLevel.value) return false;
+            if(fEst.value && row['설립구분'] !== fEst.value) return false;
+            if(fSpec.value && row['학교특성'] !== fSpec.value) return false;
+            return true;
+        });
+    }
+
+    function updateFilteredList(rows) {
+        filterResultList.innerHTML = '';
+        if(rows.length === 0) return;
+        
+        rows.forEach(school => {
+            const div = document.createElement('div');
+            div.className = 'filter-result-item';
+            div.textContent = school['학교명'];
+            div.addEventListener('click', () => displaySchoolData(school));
+            filterResultList.appendChild(div);
+        });
+    }
+
+    function formatNumber(val) { return (val === undefined || val === null || isNaN(Number(val))) ? '-' : Math.round(Number(val)).toLocaleString(); }
+    
+    function formatDate(val) {
+        if(!val) return '-';
+        const str = String(Math.round(val));
+        return str.length === 8 ? `${str.substring(0,4)}.${str.substring(4,6)}.${str.substring(6,8)}` : str;
+    }
+
+    function displaySchoolData(selectedSchool) {
+        placeholder.style.display = 'none';
+        dashboard.style.display = 'grid';
+
+        const lvl = selectedSchool['학교급'];
+        const est = selectedSchool['설립구분'];
+        const spec = selectedSchool['학교특성'];
+        const ofc = selectedSchool['시도교육청'];
+        const subOfc = selectedSchool['교육지원청'];
+
+        const officeGroup = rawData.filter(r => r['시도교육청']===ofc && r['교육지원청']===subOfc && r['학교급']===lvl && r['설립구분']===est && r['학교특성']===spec);
+        const nationalGroup = rawData.filter(r => r['학교급']===lvl && r['설립구분']===est && r['학교특성']===spec);
+
+        // 분모가 0이 되는 것을 방지하는 안전망 적용 평균 구하기 함수
+        function getAvg(group, key) {
+            const vRows = group.filter(r => r[key] !== undefined && r[key] !== null && r[key] !== '');
+            return vRows.length === 0 ? 0 : (vRows.reduce((acc, cur) => acc + Number(cur[key]), 0) / vRows.length);
+        }
+
+        const years = ['24', '23', '22'];
+        const stats = {};
+
+        years.forEach(yr => {
+            stats[yr] = {
+                target: { base: selectedSchool[`${yr}년 1인당 기본적 교육활동비`], opt: selectedSchool[`${yr}년 1인당 선택적 교육활동비`], total: selectedSchool[`${yr}년 1인당 교육비`] },
+                office: { base: getAvg(officeGroup, `${yr}년 1인당 기본적 교육활동비`), opt: getAvg(officeGroup, `${yr}년 1인당 선택적 교육활동비`), total: getAvg(officeGroup, `${yr}년 1인당 교육비`) },
+                national: { base: getAvg(nationalGroup, `${yr}년 1인당 기본적 교육활동비`), opt: getAvg(nationalGroup, `${yr}년 1인당 선택적 교육활동비`), total: getAvg(nationalGroup, `${yr}년 1인당 교육비`) }
+            };
+        });
+
+        const hp = selectedSchool['홈페이지 주소'];
+        const hpTag = hp ? `<a href="${hp.startsWith('http') ? hp : 'http://'+hp}" target="_blank">링크</a>` : '<span>-</span>';
+        
+        document.getElementById('schoolInfoGrid').innerHTML = `
+            <div class="info-item"><label>시도교육청</label><span title="${selectedSchool['시도교육청']}">${selectedSchool['시도교육청']||'-'}</span></div>
+            <div class="info-item"><label>교육지원청</label><span title="${selectedSchool['교육지원청']}">${selectedSchool['교육지원청']||'-'}</span></div>
+            <div class="info-item"><label>학교급</label><span>${selectedSchool['학교급']||'-'}</span></div>
+            <div class="info-item"><label>설립구분</label><span>${selectedSchool['설립구분']||'-'}</span></div>
+            <div class="info-item"><label>학교특성</label><span>${selectedSchool['학교특성']||'일반'}</span></div>
+            <div class="info-item"><label>개교기념일</label><span>${formatDate(selectedSchool['개교기념일'])}</span></div>
+            <div class="info-item"><label>전화번호</label><span>${selectedSchool['전화번호']||'-'}</span></div>
+            <div class="info-item"><label>홈페이지</label>${hpTag}</div>
+            <div class="info-item" style="grid-column: span 4;"><label>학교도로명 주소</label><span>${selectedSchool['학교도로명 주소']||'-'}</span></div>
+        `;
+
+        const tbody = document.getElementById('financeTableBody');
+        tbody.innerHTML = '';
+        years.forEach(yr => {
+            // 자바스크립트 문자열 템플릿(백틱 내 수식 표현) 문법 엄격 교정
+            tbody.innerHTML += `
+                <tr>
+                    <td rowspan="3" style="vertical-align:middle; font-weight:bold; background:#fff; border-right:1px solid var(--border-color)">20${yr}년</td>
+                    <td>선택 학교</td>
+                    <td>${formatNumber(stats[yr].target.base)}</td>
+                    <td>${formatNumber(stats[yr].target.opt)}</td>
+                    <td style="font-weight:700; color:var(--primary-color);">${formatNumber(stats[yr].target.total)}</td>
+                </tr>
+                <tr class="bg-office">
+                    <td>교육지원청 평균</td>
+                    <td>${formatNumber(stats[yr].office.base)}</td>
+                    <td>${formatNumber(stats[yr].office.opt)}</td>
+                    <td>${formatNumber(stats[yr].office.total)}</td>
+                </tr>
+                <tr class="bg-national">
+                    <td>전국 평균</td>
+                    <td>${formatNumber(stats[yr].national.base)}</td>
+                    <td>${formatNumber(stats[yr].national.opt)}</td>
+                    <td>${formatNumber(stats[yr].national.total)}</td>
+                </tr>
+            `;
+        });
+
+        if (chartInstance) chartInstance.destroy();
+        const ctx = document.getElementById('trendChart').getContext('2d');
+        chartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['2022년', '2023년', '2024년'],
+                datasets: [
+                    {
+                        label: `${selectedSchool['학교명']} (총액)`,
+                        data: [stats['22'].target.total, stats['23'].target.total, stats['24'].target.total],
+                        borderColor: '#1e3a8a', backgroundColor: '#1e3a8a',
+                        borderWidth: 3, pointRadius: 4, fill: false, tension: 0.1
+                    },
+                    {
+                        label: '동일 조건 교육지원청 평균',
+                        data: [stats['22'].office.total, stats['23'].office.total, stats['24'].office.total],
+                        borderColor: '#3b82f6', backgroundColor: '#3b82f6',
+                        borderWidth: 2, borderDash: [4, 4], pointRadius: 3, fill: false, tension: 0.1
+                    },
+                    {
+                        label: '동일 조건 전국 평균',
+                        data: [stats['22'].national.total, stats['23'].national.total, stats['24'].national.total],
+                        borderColor: '#06b6d4', backgroundColor: '#06b6d4',
+                        borderWidth: 2, borderDash: [2, 2], pointRadius: 3, fill: false, tension: 0.1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
+                    tooltip: { callbacks: { label: d => `${d.dataset.label}: ${d.parsed.y.toLocaleString()}원` } }
+                },
+                scales: {
+                    y: { ticks: { callback: v => v.toLocaleString(), font: { size: 10 } } },
+                    x: { ticks: { font: { size: 11 } } }
+                }
+            }
+        });
+    }
+</script>
+</body>
+</html>
