@@ -4,32 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>학교별 1인당 교육비 조회 시스템</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* 자동완성 및 드롭다운 커스텀 스타일 */
-        .autocomplete-suggestions {
-            max-height: 250px;
-            overflow-y: auto;
-        }
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background-color: #cbd5e1;
-            border-radius: 3px;
-        }
+        .autocomplete-suggestions { max-height: 250px; overflow-y: auto; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 3px; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen font-sans">
+<body class="bg-gray-50 text-gray-800 min-h-screen font-sans">
 
-    <header class="bg-white border-b border-slate-200 sticky top-0 z-50 px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-4 shadow-xs">
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-50 px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-4 shadow-sm">
         <div class="flex items-center gap-3">
             <span class="text-2xl">🏫</span>
-            <h1 class="text-xl font-bold tracking-tight text-slate-900">학교별 1인당 교육비 조회 시스템</h1>
+            <h1 class="text-xl font-bold tracking-tight text-gray-900">학교별 1인당 교육비 조회 시스템</h1>
         </div>
-        <div id="statusBadge" class="px-4 py-1.5 rounded-full text-sm font-semibold bg-amber-50 text-amber-700 border border-amber-200 flex items-center gap-2">
+        <div id="statusBadge" class="px-4 py-1.5 rounded-full text-sm font-semibold bg-yellow-50 text-yellow-700 border border-yellow-200 flex items-center gap-2">
             <span class="animate-spin text-xs">🔄</span> 데이터 로드 중...
         </div>
     </header>
@@ -37,145 +28,91 @@
     <main class="max-w-[1600px] mx-auto p-4 lg:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
         
         <section class="lg:col-span-4 flex flex-col gap-5">
-            
-            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm relative">
-                <h2 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                    <span>🔍</span> 학교명 직접 검색
-                </h2>
+            <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm relative">
+                <h2 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">🔍 학교명 직접 검색</h2>
                 <div class="relative">
-                    <input type="text" id="searchInput" disabled
-                        class="w-full px-4 py-2.5 bg-slate-100 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-sm placeholder-slate-400" 
-                        placeholder="학교명을 입력하세요 (예: 청주혜원학교)">
-                    <div id="autocompleteList" class="autocomplete-suggestions absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg hidden z-40 custom-scrollbar"></div>
+                    <input type="text" id="searchInput" disabled class="w-full px-4 py-2.5 bg-gray-100 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-sm placeholder-gray-400" placeholder="학교명을 입력하세요">
+                    <div id="autocompleteList" class="autocomplete-suggestions absolute left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg hidden z-40 custom-scrollbar"></div>
                 </div>
             </div>
 
-            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col gap-4">
-                <h2 class="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-                    <span>🎛️</span> 단계적 조건 검색
-                </h2>
-                
-                <div>
-                    <label class="block text-xs font-semibold text-slate-500 mb-1">1. 시도교육청</label>
-                    <select id="filterSido" disabled class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"><option value="">전체</option></select>
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-500 mb-1">2. 교육지원청</label>
-                    <select id="filterSupport" disabled class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"><option value="">전체</option></select>
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-500 mb-1">3. 학교급</label>
-                    <select id="filterLevel" disabled class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"><option value="">전체</option></select>
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-500 mb-1">4. 설립구분</label>
-                    <select id="filterType" disabled class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"><option value="">전체</option></select>
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-500 mb-1">5. 학교특성</label>
-                    <select id="filterFeature" disabled class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"><option value="">전체</option></select>
-                </div>
+            <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm flex flex-col gap-4">
+                <h2 class="text-sm font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">🎛️ 단계적 조건 검색</h2>
+                <div><label class="block text-xs font-semibold text-gray-500 mb-1">1. 시도교육청</label><select id="filterSido" disabled class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none"><option value="">전체</option></select></div>
+                <div><label class="block text-xs font-semibold text-gray-500 mb-1">2. 교육지원청</label><select id="filterSupport" disabled class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none"><option value="">전체</option></select></div>
+                <div><label class="block text-xs font-semibold text-gray-500 mb-1">3. 학교급</label><select id="filterLevel" disabled class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none"><option value="">전체</option></select></div>
+                <div><label class="block text-xs font-semibold text-gray-500 mb-1">4. 설립구분</label><select id="filterType" disabled class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none"><option value="">전체</option></select></div>
+                <div><label class="block text-xs font-semibold text-gray-500 mb-1">5. 학교특성</label><select id="filterFeature" disabled class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none"><option value="">전체</option></select></div>
             </div>
 
-            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex-1 flex flex-col min-h-[300px]">
-                <h2 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                    <span>📋</span> 필터 검색 결과 <span id="filteredCount" class="text-blue-600 font-extrabold text-xs bg-blue-50 px-2 py-0.5 rounded-md">0</span>
-                </h2>
-                <div id="schoolList" class="flex-1 overflow-y-auto custom-scrollbar max-h-[400px] lg:max-h-none border border-slate-100 rounded-xl divide-y divide-slate-100 text-sm">
-                    <div class="p-4 text-center text-slate-400">조건을 선택하거나 학교를 검색하세요.</div>
+            <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm flex-1 flex flex-col min-h-[300px]">
+                <h2 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">📋 필터 검색 결과 <span id="filteredCount" class="text-blue-600 font-extrabold text-xs bg-blue-50 px-2 py-0.5 rounded-md">0</span></h2>
+                <div id="schoolList" class="flex-1 overflow-y-auto custom-scrollbar max-h-[400px] lg:max-h-none border border-gray-100 rounded-xl divide-y divide-gray-100 text-sm">
+                    <div class="p-4 text-center text-gray-400">데이터를 로드하고 있습니다...</div>
                 </div>
             </div>
         </section>
 
-        <section id="dashboardWelcome" class="lg:col-span-8 bg-white rounded-2xl border border-slate-200 shadow-sm p-12 flex flex-col items-center justify-center text-center gap-4">
-            <span class="text-6xl animate-bounce">📊</span>
-            <h3 class="text-xl font-bold text-slate-700">학교를 선택해주세요</h3>
-            <p class="text-slate-400 max-w-sm text-sm">좌측의 직접 검색 창 또는 5단계 조건 검색 필터를 이용하여 상세 교육비 데이터를 파악할 학교를 선택해 주세요.</p>
+        <section id="dashboardWelcome" class="lg:col-span-8 bg-white rounded-2xl border border-gray-200 shadow-sm p-12 flex flex-col items-center justify-center text-center gap-4">
+            <span class="text-6xl">📊</span>
+            <h3 class="text-xl font-bold text-gray-700">학교를 선택해주세요</h3>
+            <p class="text-gray-400 max-w-sm text-sm">좌측의 검색창이나 필터를 이용하여 학교를 선택해 주세요.</p>
         </section>
 
         <section id="dashboardContent" class="lg:col-span-8 flex flex-col gap-6 hidden">
-            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                <div class="flex flex-wrap items-center justify-between gap-3 mb-4 pb-4 border-b border-slate-100">
+            <div class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+                <div class="flex flex-wrap items-center justify-between gap-3 mb-4 pb-4 border-b border-gray-100">
                     <div>
-                        <span id="viewSchoolLevel" class="text-xs font-semibold bg-blue-50 text-blue-600 px-2.5 py-1 rounded-md mr-2">특수학교</span>
-                        <h2 id="viewSchoolName" class="inline-block text-2xl font-black text-slate-900 mt-1">청주혜원학교</h2>
+                        <span id="viewSchoolLevel" class="text-xs font-semibold bg-blue-50 text-blue-600 px-2.5 py-1 rounded-md mr-2">-</span>
+                        <h2 id="viewSchoolName" class="inline-block text-2xl font-black text-gray-900 mt-1">-</h2>
                     </div>
-                    <a id="viewHomepage" href="#" target="_blank" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1.5 rounded-lg font-medium transition-colors">🌐 홈페이지 방문</a>
+                    <a id="viewHomepage" href="#" target="_blank" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1.5 rounded-lg font-medium transition-colors">🌐 홈페이지 방문</a>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
-                    <div class="bg-slate-50 p-3 rounded-xl"><span class="text-slate-400 block text-xs font-semibold mb-0.5">시도교육청</span><span id="viewSido" class="font-medium text-slate-700">-</span></div>
-                    <div class="bg-slate-50 p-3 rounded-xl"><span class="text-slate-400 block text-xs font-semibold mb-0.5">교육지원청</span><span id="viewSupport" class="font-medium text-slate-700">-</span></div>
-                    <div class="bg-slate-50 p-3 rounded-xl"><span class="text-slate-400 block text-xs font-semibold mb-0.5">설립구분 / 특성</span><span id="viewTypeFeature" class="font-medium text-slate-700">-</span></div>
-                    <div class="bg-slate-50 p-3 rounded-xl"><span class="text-slate-400 block text-xs font-semibold mb-0.5">개교기념일</span><span id="viewAnniversary" class="font-medium text-slate-700">-</span></div>
-                    <div class="bg-slate-50 p-3 rounded-xl"><span class="text-slate-400 block text-xs font-semibold mb-0.5">전화번호</span><span id="viewPhone" class="font-medium text-slate-700">-</span></div>
-                    <div class="bg-slate-50 p-3 rounded-xl col-span-1 sm:col-span-2 lg:col-span-3"><span class="text-slate-400 block text-xs font-semibold mb-0.5">도로명 주소</span><span id="viewAddress" class="font-medium text-slate-700">-</span></div>
+                    <div class="bg-gray-50 p-3 rounded-xl"><span class="text-gray-400 block text-xs font-semibold mb-0.5">시도교육청</span><span id="viewSido" class="font-medium text-gray-700">-</span></div>
+                    <div class="bg-gray-50 p-3 rounded-xl"><span class="text-gray-400 block text-xs font-semibold mb-0.5">교육지원청</span><span id="viewSupport" class="font-medium text-gray-700">-</span></div>
+                    <div class="bg-gray-50 p-3 rounded-xl"><span class="text-gray-400 block text-xs font-semibold mb-0.5">설립구분 / 특성</span><span id="viewTypeFeature" class="font-medium text-gray-700">-</span></div>
+                    <div class="bg-gray-50 p-3 rounded-xl"><span class="text-gray-400 block text-xs font-semibold mb-0.5">개교기념일</span><span id="viewAnniversary" class="font-medium text-gray-700">-</span></div>
+                    <div class="bg-gray-50 p-3 rounded-xl"><span class="text-gray-400 block text-xs font-semibold mb-0.5">전화번호</span><span id="viewPhone" class="font-medium text-gray-700">-</span></div>
+                    <div class="bg-gray-50 p-3 rounded-xl col-span-1 sm:col-span-2 lg:col-span-3"><span class="text-gray-400 block text-xs font-semibold mb-0.5">도로명 주소</span><span id="viewAddress" class="font-medium text-gray-700">-</span></div>
                 </div>
             </div>
 
             <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
-                <div class="xl:col-span-7 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
-                    <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                        <span>📈</span> 연도별 교육 세부 지표 (원 단위)
-                    </h3>
+                <div class="xl:col-span-7 bg-white p-5 rounded-2xl border border-gray-200 shadow-sm flex flex-col justify-between">
+                    <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">📈 연도별 교육 세부 지표</h3>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse text-xs sm:text-sm">
                             <thead>
-                                <tr class="border-b border-slate-200 bg-slate-50 text-slate-500 font-semibold">
+                                <tr class="border-b border-gray-200 bg-gray-50 text-gray-500 font-semibold">
                                     <th class="p-2.5">구분</th>
                                     <th class="p-2.5 text-right">2022년</th>
                                     <th class="p-2.5 text-right">2023년</th>
-                                    <th class="p-2.5 text-right bg-blue-50/50 text-blue-700">2024년</th>
+                                    <th class="p-2.5 text-right bg-blue-50 text-blue-700">2024년</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-slate-100 text-slate-700">
-                                <tr>
-                                    <td class="p-2.5 font-medium text-slate-500">학생수 (명)</td>
-                                    <td id="t-22-count" class="p-2.5 text-right">-</td>
-                                    <td id="t-23-count" class="p-2.5 text-right">-</td>
-                                    <td id="t-24-count" class="p-2.5 text-right font-semibold text-blue-600 bg-blue-50/30">-</td>
-                                </tr>
-                                <tr>
-                                    <td class="p-2.5 font-medium text-slate-500">기본적 교육활동비</td>
-                                    <td id="t-22-basic" class="p-2.5 text-right">-</td>
-                                    <td id="t-23-basic" class="p-2.5 text-right">-</td>
-                                    <td id="t-24-basic" class="p-2.5 text-right font-semibold text-blue-600 bg-blue-50/30">-</td>
-                                </tr>
-                                <tr>
-                                    <td class="p-2.5 font-medium text-slate-500">선택적 교육활동비</td>
-                                    <td id="t-22-select" class="p-2.5 text-right">-</td>
-                                    <td id="t-23-select" class="p-2.5 text-right">-</td>
-                                    <td id="t-24-select" class="p-2.5 text-right font-semibold text-blue-600 bg-blue-50/30">-</td>
-                                </tr>
-                                <tr class="bg-slate-50/80 font-bold">
-                                    <td class="p-2.5 text-slate-600">1인당 총 교육비</td>
-                                    <td id="t-22-total" class="p-2.5 text-right text-slate-900">-</td>
-                                    <td id="t-23-total" class="p-2.5 text-right text-slate-900">-</td>
-                                    <td id="t-24-total" class="p-2.5 text-right text-blue-700 bg-blue-50/50">-</td>
-                                </tr>
+                            <tbody class="divide-y divide-gray-100 text-gray-700">
+                                <tr><td class="p-2.5 font-medium text-gray-500">학생수 (명)</td><td id="t-22-count" class="p-2.5 text-right">-</td><td id="t-23-count" class="p-2.5 text-right">-</td><td id="t-24-count" class="p-2.5 text-right font-semibold text-blue-600 bg-blue-50/30">-</td></tr>
+                                <tr><td class="p-2.5 font-medium text-gray-500">기본적 교육활동비</td><td id="t-22-basic" class="p-2.5 text-right">-</td><td id="t-23-basic" class="p-2.5 text-right">-</td><td id="t-24-basic" class="p-2.5 text-right font-semibold text-blue-600 bg-blue-50/30">-</td></tr>
+                                <tr><td class="p-2.5 font-medium text-gray-500">선택적 교육활동비</td><td id="t-22-select" class="p-2.5 text-right">-</td><td id="t-23-select" class="p-2.5 text-right">-</td><td id="t-24-select" class="p-2.5 text-right font-semibold text-blue-600 bg-blue-50/30">-</td></tr>
+                                <tr class="bg-gray-50 font-bold"><td class="p-2.5 text-gray-600">1인당 총 교육비</td><td id="t-22-total" class="p-2.5 text-right text-gray-900">-</td><td id="t-23-total" class="p-2.5 text-right text-gray-900">-</td><td id="t-24-total" class="p-2.5 text-right text-blue-700 bg-blue-50">-</td></tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
-
-                <div class="xl:col-span-5 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
-                    <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                        <span>📊</span> 3개년 총 교육비 추이 비교
-                    </h3>
-                    <div class="flex-1 relative min-h-[220px] w-full flex items-center justify-center">
-                        <canvas id="trendChart"></canvas>
-                    </div>
+                <div class="xl:col-span-5 bg-white p-5 rounded-2xl border border-gray-200 shadow-sm flex flex-col">
+                    <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">📊 3개년 총 교육비 추이 비교</h3>
+                    <div class="flex-1 relative min-h-[220px] w-full flex items-center justify-center"><canvas id="trendChart"></canvas></div>
                 </div>
             </div>
         </section>
     </main>
 
     <script>
-        // 전역 데이터 저장 공간
         let rawData = [];
         let filteredData = [];
         let myChart = null;
 
-        // 안전한 숫자 정제 및 변환 함수 (문자열, 결측치 완벽 제어)
         function cleanNum(value) {
             if (value === undefined || value === null) return 0;
             const clean = String(value).replace(/[^0-9.-]/g, '');
@@ -183,113 +120,202 @@
             return isNaN(num) ? 0 : num;
         }
 
-        // 화폐 단위 포맷팅 함수
         function formatWon(value) {
             const num = cleanNum(value);
             return num === 0 ? '-' : num.toLocaleString() + ' 원';
         }
 
-        // 날짜 포맷팅 함수 (YYYYMMDD -> YYYY-MM-DD)
         function formatDate(str) {
             if(!str) return '-';
             const s = String(str).split('.')[0].trim();
-            if(s.length === 8) {
-                return `${s.substring(0,4)}-${s.substring(4,6)}-${s.substring(6,8)}`;
-            }
+            if(s.length === 8) return `${s.substring(0,4)}-${s.substring(4,6)}-${s.substring(6,8)}`;
             return s || '-';
         }
 
-        // 웹페이지 로드 시 CSV 자동 로드 수행
         document.addEventListener("DOMContentLoaded", () => {
-            // 주소 뒤에 랜덤 쿼리 스트링(?v=...)을 붙여 브라우저의 강제 캐싱을 방해하고 무조건 새 데이터를 요청합니다.
+            // 강제 캐시 파괴용 난수 적용하여 파싱 시작
             Papa.parse("data.csv?v=" + Math.random(), {
                 download: true,
                 header: true,
-                skipEmptyLines: 'greedy', // 공백이거나 불완전한 빈 줄은 연산에서 완전히 제외
+                skipEmptyLines: 'greedy',
                 encoding: "UTF-8",
                 complete: function(results) {
-                    // 데이터 검증: 필수 열인 '학교명'이 올바르게 존재하는 행만 추출
                     rawData = results.data.filter(row => row['학교명'] && row['학교명'].trim() !== "");
                     filteredData = [...rawData];
                     
                     if(rawData.length === 0) {
-                        showErrorBadge("데이터 내용 없음", "CSV 파일 파싱은 성공했으나, 안에 읽을 수 있는 학교 데이터가 없습니다.");
+                        document.getElementById("statusBadge").innerHTML = "⚠️ CSV 내용 판독 불가";
                         return;
                     }
 
-                    // 성공 상태 변경 및 검색 폼 활성화
                     const badge = document.getElementById("statusBadge");
-                    badge.className = "px-4 py-1.5 rounded-full text-sm font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-2";
+                    badge.className = "px-4 py-1.5 rounded-full text-sm font-semibold bg-green-50 text-green-700 border border-green-200 flex items-center gap-2";
                     badge.innerHTML = `📊 로드 완료 (${rawData.length.toLocaleString()}개교)`;
 
                     document.getElementById("searchInput").disabled = false;
-                    
-                    // 초기 필터 드롭다운 구성 및 리스트 바인딩
                     initFilters();
                     updateSchoolList(filteredData);
                 },
                 error: function(err) {
-                    showErrorBadge("네트워크/파일 로드 에러", "상대경로의 data.csv를 불러오지 못했습니다.");
-                    console.error("CSV Parse Error:", err);
-                    
-                    alert("⚠️ [데이터 로드 실패 안내]\n\n배포 직후에는 깃허브 서버 반영에 1~2분 정도 소요될 수 있습니다.\n\n새로고침(Ctrl + F5)을 시도해 보시고, 지속될 경우 저장소 최상위에 'data.csv' 파일 이름이 소문자로 정확히 들어가 있는지 확인해 주세요.");
+                    document.getElementById("statusBadge").innerHTML = "❌ 로드 에러 발생";
+                    alert("데이터 로드 실패: 파일명 혹은 서버 상태를 확인하세요.");
                 }
             });
-
-            // 직접 검색 실시간 리스너 설정
             setupSearch();
         });
 
-        function showErrorBadge(title, desc) {
-            const badge = document.getElementById("statusBadge");
-            badge.className = "px-4 py-1.5 rounded-full text-sm font-semibold bg-rose-50 text-rose-700 border border-rose-200 flex items-center gap-2";
-            badge.innerHTML = `❌ ${title}`;
-            console.warn(desc);
-        }
-
-        // 5단계 필터 요소 및 관계 정의
         const filterIds = ["filterSido", "filterSupport", "filterLevel", "filterType", "filterFeature"];
         const filterKeys = ["시도교육청", "교육지원청", "학교급", "설립구분", "학교특성"];
 
         function initFilters() {
             filterIds.forEach((id) => {
                 const el = document.getElementById(id);
-                if(el) {
-                    el.disabled = false;
-                    el.addEventListener("change", () => handleFilterChange(id));
-                }
+                if(el) { el.disabled = false; el.addEventListener("change", () => handleFilterChange(id)); }
             });
             rebuildFilters(0);
         }
 
-        // 유기적 상위 조건 연동을 위한 드롭다운 옵션 재설정
         function rebuildFilters(startIndex) {
             let currentSet = [...rawData];
-            
             for (let i = 0; i < startIndex; i++) {
                 const el = document.getElementById(filterIds[i]);
                 const val = el ? el.value : "";
-                if (val) {
-                    currentSet = currentSet.filter(row => row[filterKeys[i]] === val);
-                }
+                if (val) currentSet = currentSet.filter(row => row[filterKeys[i]] === val);
             }
-
             for (let i = startIndex; i < filterIds.length; i++) {
                 const el = document.getElementById(filterIds[i]);
                 if(!el) continue;
                 const prevVal = el.value;
-
                 const uniqueValues = [...new Set(currentSet.map(row => row[filterKeys[i]] ? row[filterKeys[i]].trim() : ""))].filter(Boolean).sort();
-                
                 el.innerHTML = '<option value="">전체</option>';
                 uniqueValues.forEach(val => {
-                    const opt = document.createElement("option");
-                    opt.value = val;
-                    opt.textContent = val;
+                    const opt = document.createElement("option"); opt.value = val; opt.textContent = val;
                     if(val === prevVal) opt.selected = true;
                     el.appendChild(opt);
                 });
-
                 const currentVal = el.value;
-                if (currentVal) {
-                    currentSet = currentSet.filter
+                if (currentVal) currentSet = currentSet.filter(row => row[filterKeys[i]] === currentVal);
+            }
+            filteredData = currentSet;
+            updateSchoolList(filteredData);
+        }
+
+        function handleFilterChange(changedId) {
+            const index = filterIds.indexOf(changedId);
+            const searchInp = document.getElementById("searchInput");
+            if(searchInp) searchInp.value = "";
+            rebuildFilters(index + 1);
+        }
+
+        function updateSchoolList(data) {
+            const listEl = document.getElementById("schoolList");
+            const countEl = document.getElementById("filteredCount");
+            if(countEl) countEl.textContent = data.length.toLocaleString();
+            if(!listEl) return;
+            if (data.length === 0) {
+                listEl.innerHTML = '<div class="p-4 text-center text-gray-400">조건에 맞는 학교가 없습니다.</div>';
+                return;
+            }
+            listEl.innerHTML = "";
+            data.forEach(school => {
+                const item = document.createElement("div");
+                item.className = "p-3 hover:bg-gray-50 cursor-pointer transition-colors flex flex-col gap-0.5";
+                item.innerHTML = `<div class="font-bold text-gray-800">${school['학교명']}</div><div class="text-xs text-gray-400">${school['시도교육청']} | ${school['교육지원청']}</div>`;
+                item.addEventListener("click", () => selectSchool(school));
+                listEl.appendChild(item);
+            });
+        }
+
+        function setupSearch() {
+            const input = document.getElementById("searchInput");
+            const suggestBox = document.getElementById("autocompleteList");
+            if(!input || !suggestBox) return;
+            input.addEventListener("input", () => {
+                const text = input.value.trim().toLowerCase();
+                if (!text) { suggestBox.classList.add("hidden"); return; }
+                const matches = rawData.filter(row => row['학교명'] && row['학교명'].toLowerCase().includes(text)).slice(0, 10);
+                if (matches.length === 0) {
+                    suggestBox.innerHTML = '<div class="p-3 text-xs text-gray-400">결과 없음</div>';
+                } else {
+                    suggestBox.innerHTML = "";
+                    matches.forEach(school => {
+                        const div = document.createElement("div");
+                        div.className = "p-2.5 hover:bg-gray-50 text-sm cursor-pointer border-b border-gray-50";
+                        div.innerHTML = `<span class="font-semibold text-gray-800">${school['학교명']}</span> <span class="text-xs text-gray-400">(${school['시도교육청']})</span>`;
+                        div.addEventListener("click", () => {
+                            filterIds.forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
+                            selectSchool(school);
+                            suggestBox.classList.add("hidden");
+                            input.value = school['학교명'];
+                        });
+                        suggestBox.appendChild(div);
+                    });
+                }
+                suggestBox.classList.remove("hidden");
+            });
+            document.addEventListener("click", (e) => { if (!input.contains(e.target) && !suggestBox.contains(e.target)) suggestBox.classList.add("hidden"); });
+        }
+
+        function calculateAverage(dataset, year) {
+            let totalSum = 0, count = 0;
+            const key = `${year}년 1인당 교육비`;
+            dataset.forEach(row => { const val = cleanNum(row[key]); if (val > 0) { totalSum += val; count++; } });
+            return count === 0 ? 0 : Math.round(totalSum / count);
+        }
+
+        function selectSchool(school) {
+            document.getElementById("dashboardWelcome").classList.add("hidden");
+            document.getElementById("dashboardContent").classList.remove("hidden");
+            document.getElementById("viewSchoolName").textContent = school['학교명'] || '-';
+            document.getElementById("viewSchoolLevel").textContent = school['학교급'] || '미분류';
+            document.getElementById("viewSido").textContent = school['시도교육청'] || '-';
+            document.getElementById("viewSupport").textContent = school['교육지원청'] || '-';
+            document.getElementById("viewTypeFeature").textContent = `${school['설립구분'] || '-'} / ${school['학교특성'] || '일반'}`;
+            document.getElementById("viewAnniversary").textContent = formatDate(school['개교기념일']);
+            document.getElementById("viewPhone").textContent = school['전화번호'] || '-';
+            document.getElementById("viewAddress").textContent = school['학교도로명 주소'] || '-';
+            
+            const hp = school['홈페이지 주소'];
+            const hpEl = document.getElementById("viewHomepage");
+            if(hp && hpEl) { hpEl.href = hp.startsWith('http') ? hp : 'http://' + hp; hpEl.classList.remove("hidden"); }
+            else if(hpEl) { hpEl.classList.add("hidden"); }
+
+            for (let year of ['22', '23', '24']) {
+                document.getElementById(`t-${year}-count`).textContent = cleanNum(school[`${year}년 학생수`]) ? cleanNum(school[`${year}년 학생수`]).toLocaleString() + ' 명' : '-';
+                document.getElementById(`t-${year}-basic`).textContent = formatWon(school[`${year}년 1인당 기본적 교육활동비`]);
+                document.getElementById(`t-${year}-select`).textContent = formatWon(school[`${year}년 1인당 선택적 교육활동비`]);
+                document.getElementById(`t-${year}-total`).textContent = formatWon(school[`${year}년 1인당 교육비`]);
+            }
+
+            const supportGroup = rawData.filter(row => row['교육지원청'] === school['교육지원청']);
+            const schoolData = [cleanNum(school['22년 1인당 교육비']), cleanNum(school['23년 1인당 교육비']), cleanNum(school['24년 1인당 교육비'])];
+            const supportAvgData = [calculateAverage(supportGroup, 22), calculateAverage(supportGroup, 23), calculateAverage(supportGroup, 24)];
+            const nationalAvgData = [calculateAverage(rawData, 22), calculateAverage(rawData, 23), calculateAverage(rawData, 24)];
+
+            renderChart(school['학교명'], schoolData, supportAvgData, nationalAvgData);
+        }
+
+        function renderChart(schoolName, schoolData, supportAvg, nationalAvg) {
+            const ctx = document.getElementById('trendChart').getContext('2d');
+            if (myChart) myChart.destroy();
+            myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['2022년', '2023년', '2024년'],
+                    datasets: [
+                        { label: schoolName, data: schoolData, borderColor: '#1d4ed8', backgroundColor: '#1d4ed8', borderWidth: 3, tension: 0.15, pointRadius: 4 },
+                        { label: '교육지원청 평균', data: supportAvg, borderColor: '#10b981', backgroundColor: '#10b981', borderWidth: 2, borderDash: [5, 5], tension: 0.15, pointRadius: 3 },
+                        { label: '전국 평균', data: nationalAvg, borderColor: '#94a3b8', backgroundColor: '#94a3b8', borderWidth: 2, borderDash: [3, 3], tension: 0.15, pointRadius: 3 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } },
+                    scales: { y: { grid: { color: '#f1f5f9' }, ticks: { callback: function(v) { return (v / 10000).toLocaleString() + '만'; } } }, x: { grid: { display: false } } }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
