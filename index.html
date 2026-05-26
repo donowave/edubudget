@@ -50,6 +50,7 @@
             background: rgba(255, 255, 255, 0.2);
             padding: 6px 14px;
             border-radius: 20px;
+            font-weight: bold;
         }
 
         .main-layout { display: flex; gap: 15px; flex: 1; height: calc(100vh - 85px); }
@@ -112,7 +113,7 @@
             <h1>에듀버짓 (EduBudget)</h1>
             <p>학교별 1인당 교육비 조회 시스템</p>
         </div>
-        <div id="statusMsg">🔄 data.csv 로드 중...</div>
+        <div id="statusMsg">🔄 데이터 로드 중...</div>
     </header>
 
     <div class="main-layout">
@@ -195,8 +196,8 @@
     const filterResultList = document.getElementById('filterResultList');
 
     window.addEventListener('DOMContentLoaded', function() {
-        // 경로 안정성 확보: 대소문자 매칭 및 깃허브 페이지 호환 상대 경로 지정
-        Papa.parse("data.csv", {
+        // [파일명 핵심 수정] 실제 파일명인 '1인당교육비.csv'로 타겟 고정 및 인코딩 보장
+        Papa.parse("1인당교육비.csv", {
             download: true,
             header: true,
             skipEmptyLines: true,
@@ -214,7 +215,7 @@
                 initFilterOptions();
             },
             error: function(err) {
-                statusMsg.textContent = "❌ 파일 주소 연동 실패";
+                statusMsg.textContent = "❌ CSV 로드 실패";
             }
         });
     });
@@ -326,17 +327,7 @@
         return isNaN(n) ? 0 : n;
     }
 
-    function formatNumber(val) { 
-        const n = cleanNum(val);
-        return n === 0 ? '-' : Math.round(n).toLocaleString(); 
-    }
-    
-    function formatDate(val) {
-        if(!val) return '-';
-        const str = String(Math.round(cleanNum(val)));
-        return str.length === 8 ? `${str.substring(0,4)}.${str.substring(4,6)}.${str.substring(6,8)}` : str;
-    }
-
+    // 파일 내 열 이름에 맞춰 매핑 규칙 정밀 수정
     function displaySchoolData(selectedSchool) {
         placeholder.style.display = 'none';
         dashboard.style.display = 'grid';
@@ -355,24 +346,30 @@
                 if(!r) return false;
                 const val = r[key];
                 if(val === undefined || val === null || String(val).trim() === '') return false;
-                const n = Number(String(val).replace(/[^0-9.-]/g, ''));
-                return !isNaN(n) && n > 0;
+                return !isNaN(cleanNum(val)) && cleanNum(val) > 0;
             });
             if (validRows.length === 0) return 0;
-            const sum = validRows.reduce((acc, cur) => acc + Number(String(cur[key]).replace(/[^0-9.-]/g, '')), 0);
+            const sum = validRows.reduce((acc, cur) => acc + cleanNum(cur[key]), 0);
             return sum / validRows.length;
         }
 
-        const years = ['24', '23', '22'];
-        const stats = {};
-
-        years.forEach(yr => {
-            stats[yr] = {
-                target: { base: cleanNum(selectedSchool[`${yr}년 1인당 기본적 교육활동비`]), opt: cleanNum(selectedSchool[`${yr}년 1인당 선택적 교육활동비`]), total: cleanNum(selectedSchool[`${yr}년 1인당 교육비`]) },
-                office: { base: getAvg(officeGroup, `${yr}년 1인당 기본적 교육활동비`), opt: getAvg(officeGroup, `${yr}년 1인당 선택적 교육활동비`), total: getAvg(officeGroup, `${yr}년 1인당 교육비`) },
-                national: { base: getAvg(nationalGroup, `${yr}년 1인당 기본적 교육활동비`), opt: getAvg(nationalGroup, `${yr}년 1인당 선택적 교육활동비`), total: getAvg(nationalGroup, `${yr}년 1인당 교육비`) }
-            };
-        });
+        const stats = {
+            '24': {
+                target: { base: cleanNum(selectedSchool['24년 1인당 기본적 교육활동비']), opt: cleanNum(selectedSchool['24년 1인당 선택적 교육활동비']), total: cleanNum(selectedSchool['24년 1인당 교육비']) },
+                office: { base: getAvg(officeGroup, '24년 1인당 기본적 교육활동비'), opt: getAvg(officeGroup, '24년 1인당 선택적 교육활동비'), total: getAvg(officeGroup, '24년 1인당 교육비') },
+                national: { base: getAvg(nationalGroup, '24년 1인당 기본적 교육활동비'), opt: getAvg(nationalGroup, '24년 1인당 선택적 교육활동비'), total: getAvg(nationalGroup, '24년 1인당 교육비') }
+            },
+            '23': {
+                target: { base: cleanNum(selectedSchool['23년 1인당 기본적 교육활동비']), opt: cleanNum(selectedSchool['23년 1인당 선택적 교육활동비']), total: cleanNum(selectedSchool['23년 1인당 교육비']) },
+                office: { base: getAvg(officeGroup, '23년 1인당 기본적 교육활동비'), opt: getAvg(officeGroup, '23년 1인당 선택적 교육활동비'), total: getAvg(officeGroup, '23년 1인당 교육비') },
+                national: { base: getAvg(nationalGroup, '23년 1인당 기본적 교육활동비'), opt: getAvg(nationalGroup, '23년 1인당 선택적 교육활동비'), total: getAvg(nationalGroup, '23년 1인당 교육비') }
+            },
+            '22': {
+                target: { base: cleanNum(selectedSchool['22년 1인당 기본적 교육활동비']), opt: cleanNum(selectedSchool['22년 1인당 선택적 교육활동비']), total: cleanNum(selectedSchool['22년 1인당 교육비']) },
+                office: { base: getAvg(officeGroup, '22년 1인당 기본적 교육활동비'), opt: getAvg(officeGroup, '22년 1인당 선택적 교육활동비'), total: getAvg(officeGroup, '22년 1인당 교육비') },
+                national: { base: getAvg(nationalGroup, '22년 1인당 기본적 교육활동비'), opt: getAvg(nationalGroup, '22년 1인당 선택적 교육활동비'), total: getAvg(nationalGroup, '22년 1인당 교육비') }
+            }
+        };
 
         const hp = selectedSchool['홈페이지 주소'];
         const hpTag = hp ? `<a href="${hp.startsWith('http') ? hp : 'http://'+hp}" target="_blank">링크</a>` : '<span>-</span>';
@@ -383,7 +380,7 @@
             <div class="info-item"><label>학교급</label><span>${selectedSchool['학교급']||'-'}</span></div>
             <div class="info-item"><label>설립구분</label><span>${selectedSchool['설립구분']||'-'}</span></div>
             <div class="info-item"><label>학교특성</label><span>${selectedSchool['학교특성']||'일반'}</span></div>
-            <div class="info-item"><label>개교기념일</label><span>${formatDate(selectedSchool['개교기념일'])}</span></div>
+            <div class="info-item"><label>개교기념일</label><span>${cleanNum(selectedSchool['개교기념일'])}</span></div>
             <div class="info-item"><label>전화번호</label><span>${selectedSchool['전화번호']||'-'}</span></div>
             <div class="info-item"><label>홈페이지</label>${hpTag}</div>
             <div class="info-item" style="grid-column: span 4;"><label>학교도로명 주소</label><span>${selectedSchool['학교도로명 주소']||'-'}</span></div>
@@ -391,26 +388,26 @@
 
         const tbody = document.getElementById('financeTableBody');
         tbody.innerHTML = '';
-        years.forEach(yr => {
+        ['24', '23', '22'].forEach(yr => {
             tbody.innerHTML += `
                 <tr>
                     <td rowspan="3" style="vertical-align:middle; font-weight:bold; background:#fff; border-right:1px solid var(--border-color)">20${yr}년</td>
                     <td>선택 학교</td>
-                    <td>${formatNumber(stats[yr].target.base)}</td>
-                    <td>${formatNumber(stats[yr].target.opt)}</td>
-                    <td style="font-weight:700; color:var(--primary-color);">${formatNumber(stats[yr].target.total)}</td>
+                    <td>${Math.round(stats[yr].target.base).toLocaleString()}원</td>
+                    <td>${Math.round(stats[yr].target.opt).toLocaleString()}원</td>
+                    <td style="font-weight:700; color:var(--primary-color);">${Math.round(stats[yr].target.total).toLocaleString()}원</td>
                 </tr>
                 <tr class="bg-office">
                     <td>교육지원청 평균</td>
-                    <td>${formatNumber(stats[yr].office.base)}</td>
-                    <td>${formatNumber(stats[yr].office.opt)}</td>
-                    <td>${formatNumber(stats[yr].office.total)}</td>
+                    <td>${Math.round(stats[yr].office.base).toLocaleString()}원</td>
+                    <td>${Math.round(stats[yr].office.opt).toLocaleString()}원</td>
+                    <td>${Math.round(stats[yr].office.total).toLocaleString()}원</td>
                 </tr>
                 <tr class="bg-national">
                     <td>전국 평균</td>
-                    <td>${formatNumber(stats[yr].national.base)}</td>
-                    <td>${formatNumber(stats[yr].national.opt)}</td>
-                    <td>${formatNumber(stats[yr].national.total)}</td>
+                    <td>${Math.round(stats[yr].national.base).toLocaleString()}원</td>
+                    <td>${Math.round(stats[yr].national.opt).toLocaleString()}원</td>
+                    <td>${Math.round(stats[yr].national.total).toLocaleString()}원</td>
                 </tr>
             `;
         });
