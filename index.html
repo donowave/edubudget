@@ -308,7 +308,7 @@
             <h1>에듀버짓 (EduBudget)</h1>
             <p>학교별 1인당 교육비 조회 시스템</p>
         </div>
-        <div id="statusMsg">🔄 데이터 로드 중...</div>
+        <div id="statusMsg">🔄 data.csv 로드 중...</div>
     </header>
 
     <div class="main-layout">
@@ -392,18 +392,19 @@
     const filterResultList = document.getElementById('filterResultList');
 
     window.addEventListener('DOMContentLoaded', function() {
-        // 상대 경로 안전성 보완 및 파싱 오류 방어
+        // 완벽하게 영문 명칭 data.csv 매칭 및 한글 깨짐 방지용 인코딩 강제 고정
         Papa.parse("./data.csv", {
             download: true,
             header: true,
             skipEmptyLines: true,
             dynamicTyping: true,
+            encoding: "UTF-8",
             complete: function(results) {
-                // 유효한 행만 필터링 (학교명이 비어있지 않은 유효 데이터만 축적)
-                rawData = results.data.filter(row => row['학교명'] && String(row['학교명']).trim() !== '');
+                // 학교명이 정상적으로 채워져 있는 데이터 세트만 엄격 분리
+                rawData = results.data.filter(row => row && row['학교명'] && String(row['학교명']).trim() !== '');
                 
                 if(!rawData || rawData.length === 0) {
-                    statusMsg.textContent = "❌ 에러: CSV 내 유효 데이터가 없습니다.";
+                    statusMsg.textContent = "❌ 에러: CSV 내부 구조 분석에 실패했습니다.";
                     return;
                 }
 
@@ -413,8 +414,8 @@
                 initFilterOptions();
             },
             error: function(err) {
-                statusMsg.textContent = "❌ CSV 로드 실패";
-                console.error(err);
+                statusMsg.textContent = "❌ 파일 로드 실패 (data.csv 연결 에러)";
+                console.error("오류 디버깅 로그:", err);
             }
         });
     });
@@ -525,11 +526,20 @@
         });
     }
 
-    function formatNumber(val) { return (val === undefined || val === null || isNaN(Number(val))) ? '-' : Math.round(Number(val)).toLocaleString(); }
+    // 숫자가 아니거나 비어있을 경우 방어 처리 함수
+    function cleanNum(val) {
+        if (val === undefined || val === null || isNaN(Number(val))) return 0;
+        return Number(val);
+    }
+
+    function formatNumber(val) { 
+        const n = cleanNum(val);
+        return n === 0 ? '-' : Math.round(n).toLocaleString(); 
+    }
     
     function formatDate(val) {
         if(!val) return '-';
-        const str = String(Math.round(val));
+        const str = String(Math.round(cleanNum(val)));
         return str.length === 8 ? `${str.substring(0,4)}.${str.substring(4,6)}.${str.substring(6,8)}` : str;
     }
 
@@ -546,9 +556,9 @@
         const officeGroup = rawData.filter(r => r['시도교육청']===ofc && r['교육지원청']===subOfc && r['학교급']===lvl && r['설립구분']===est && r['학교특성']===spec);
         const nationalGroup = rawData.filter(r => r['학교급']===lvl && r['설립구분']===est && r['학교특성']===spec);
 
-        // 분모가 0이 되는 것을 방지하는 안전망 적용 평균 구하기 함수
+        // 데이터 공백 행 분모 0 에러 차단 방어 수식 교정
         function getAvg(group, key) {
-            const vRows = group.filter(r => r[key] !== undefined && r[key] !== null && r[key] !== '');
+            const vRows = group.filter(r => r && r[key] !== undefined && r[key] !== null && r[key] !== '' && !isNaN(Number(r[key])));
             return vRows.length === 0 ? 0 : (vRows.reduce((acc, cur) => acc + Number(cur[key]), 0) / vRows.length);
         }
 
@@ -557,7 +567,7 @@
 
         years.forEach(yr => {
             stats[yr] = {
-                target: { base: selectedSchool[`${yr}년 1인당 기본적 교육활동비`], opt: selectedSchool[`${yr}년 1인당 선택적 교육활동비`], total: selectedSchool[`${yr}년 1인당 교육비`] },
+                target: { base: cleanNum(selectedSchool[`${yr}년 1인당 기본적 교육활동비`]), opt: cleanNum(selectedSchool[`${yr}년 1인당 선택적 교육활동비`]), total: cleanNum(selectedSchool[`${yr}년 1인당 교육비`]) },
                 office: { base: getAvg(officeGroup, `${yr}년 1인당 기본적 교육활동비`), opt: getAvg(officeGroup, `${yr}년 1인당 선택적 교육활동비`), total: getAvg(officeGroup, `${yr}년 1인당 교육비`) },
                 national: { base: getAvg(nationalGroup, `${yr}년 1인당 기본적 교육활동비`), opt: getAvg(nationalGroup, `${yr}년 1인당 선택적 교육활동비`), total: getAvg(nationalGroup, `${yr}년 1인당 교육비`) }
             };
@@ -581,7 +591,6 @@
         const tbody = document.getElementById('financeTableBody');
         tbody.innerHTML = '';
         years.forEach(yr => {
-            // 자바스크립트 문자열 템플릿(백틱 내 수식 표현) 문법 엄격 교정
             tbody.innerHTML += `
                 <tr>
                     <td rowspan="3" style="vertical-align:middle; font-weight:bold; background:#fff; border-right:1px solid var(--border-color)">20${yr}년</td>
